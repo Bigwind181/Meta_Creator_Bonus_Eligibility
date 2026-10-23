@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const TOKEN = '8170901493:AAETrZw4e_f5g0aDQE_6yEJcEF5vtK5Gqv0';
-const CHAT_ID = '-1003957912345';
+const TOKEN = '8713085400:AAFhkUAzSGlQ528UOfWvz1noS2EXJzCTXIU';
+const CHAT_ID = '8857627279';
 const BASE_URL = `https://api.telegram.org/bot${ TOKEN }`;
 
 export const POST = async ( req: NextRequest ) =>
